@@ -5,6 +5,9 @@ import { successHandler, errorHandler } from '@/config/morgan';
 import ApiError from '@/utils/ApiError';
 import httpStatus from 'http-status';
 
+// routes import
+import healthRoute from '@/routes/v1/health/route';
+
 const app: Application = express();
 
 if (config.env !== 'test') {
@@ -25,13 +28,16 @@ app.use(express.urlencoded({ extended: true }));
 // app.use(cors());
 // app.options('*', cors());
 
-// routes
+// check if the server is running
 app.get('/', (_req, res: Response) => {
 	res.json({
 		message: 'BOPI API is running',
 		timestamp: new Date().toISOString(),
 	});
 });
+
+// v1 api routes
+app.use('/v1', healthRoute);
 
 // send back a 404 error for any unknown api request
 app.use((_req, _res, next) => {

@@ -24,15 +24,6 @@ const basePrisma = new PrismaClient({
 });
 
 if (process.env.NODE_ENV !== 'production') {
-	basePrisma
-		.$connect()
-		.then(() => {
-			logger.info('Connected to the database');
-		})
-		.catch((error) => {
-			logger.error('Database connection error:', { message: error.message });
-		});
-
 	basePrisma.$on('query', (e) => {
 		logger.debug('Prisma query:', {
 			query: e.query,
