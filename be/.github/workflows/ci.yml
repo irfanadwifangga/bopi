@@ -1,0 +1,49 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build-and-test:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                node-version: [20.x]
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Use Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node-version }}
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: TypeScript compile check
+              env:
+                  NODE_ENV: test
+                  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+                  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+                  # Cookie-related config used by auth code during tests
+                  COOKIE_SAMESITE: ${{ secrets.COOKIE_SAMESITE }}
+                  COOKIE_SECURE: ${{ secrets.COOKIE_SECURE }}
+              run: npx tsc --noEmit
+
+            - name: Run tests
+              env:
+                  NODE_ENV: test
+                  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+                  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+                  # Cookie-related config used by auth code during tests
+                  COOKIE_SAMESITE: ${{ secrets.COOKIE_SAMESITE }}
+                  COOKIE_SECURE: ${{ secrets.COOKIE_SECURE }}
+              run: npm test --silent
+# Notes:
+# - Set `DATABASE_URL`, `JWT_SECRET`, and optionally `COOKIE_SAMESITE` and `COOKIE_SECURE` in the repository secrets for tests that need config.
+#   For simple unit tests you can set COOKIE_SECURE to `false` in CI if your tests run over HTTP-only contexts.
+# - For full integration tests you may want to run a test database (Postgres) via services or an external test database.

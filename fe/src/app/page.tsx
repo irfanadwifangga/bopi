@@ -1,82 +1,149 @@
-import Image from 'next/image';
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export default function Home() {
-	return (
-		<div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-			<main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-				<Image
-					className="dark:invert"
-					src="/next.svg"
-					alt="Next.js logo"
-					width={180}
-					height={38}
-					priority
-				/>
-				<ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-					<li className="mb-2 tracking-[-.01em]">
-						Get started by editing{' '}
-						<code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-							src/app/page.tsx
-						</code>
-						.
-					</li>
-					<li className="tracking-[-.01em]">Save and see your changes instantly.</li>
-				</ol>
+	const [status, setStatus] = useState<number | null>(null);
+	const [headersObj, setHeadersObj] = useState<Record<string, string>>({});
+	const [body, setBody] = useState<any>(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
-				<div className="flex gap-4 items-center flex-col sm:flex-row">
-					<a
-						className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-						href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						<Image
-							className="dark:invert"
-							src="/vercel.svg"
-							alt="Vercel logomark"
-							width={20}
-							height={20}
-						/>
-						Deploy now
-					</a>
-					<a
-						className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-						href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						Read our docs
-					</a>
-				</div>
+	const refresh = () => {
+		const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2000';
+		setLoading(true);
+		setError(null);
+		fetch(`${apiBase}/v1/auth/me`, { credentials: 'include' })
+			.then(async (res) => {
+				setStatus(res.status);
+				const h: Record<string, string> = {};
+				res.headers.forEach((value, key) => (h[key] = value));
+				setHeadersObj(h);
+				try {
+					const json = await res.json();
+					setBody(json?.data ?? json);
+				} catch (e) {
+					setBody(null);
+				}
+			})
+			.catch((err) => setError(String(err)))
+			.finally(() => setLoading(false));
+	};
+
+	useEffect(() => {
+		refresh();
+	}, []);
+
+	const handleLogout = async () => {
+		const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2000';
+		try {
+			await fetch(`${apiBase}/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+		} catch (e) {
+			// ignore
+		}
+		// refresh inspector state
+		refresh();
+	};
+
+	useEffect(() => {
+		const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2000';
+		setLoading(true);
+		fetch(`${apiBase}/v1/auth/me`, { credentials: 'include' })
+			.then(async (res) => {
+				setStatus(res.status);
+				const h: Record<string, string> = {};
+				res.headers.forEach((value, key) => (h[key] = value));
+				setHeadersObj(h);
+				try {
+					const json = await res.json();
+					setBody(json?.data ?? json);
+				} catch (e) {
+					setBody(null);
+				}
+			})
+			.catch((err) => setError(String(err)))
+			.finally(() => setLoading(false));
+	}, []);
+
+	return (
+		<div className="min-h-screen p-8">
+			<header className="flex items-center justify-between mb-8">
+				<h1 className="text-2xl font-bold">BOPI — Auth inspector</h1>
+				<nav className="space-x-4">
+					<Link href="/auth/login" className="text-orange-500 underline">
+						Login
+					</Link>
+					<Link href="/auth/register" className="text-gray-600 underline">
+						Register
+					</Link>
+				</nav>
+			</header>
+
+			<main>
+				<section className="mb-6">
+					<h2 className="text-lg font-semibold">HTTP /v1/auth/me</h2>
+					{loading ? (
+						<p>Checking authentication...</p>
+					) : error ? (
+						<pre className="bg-red-50 p-4 rounded">{error}</pre>
+					) : (
+						<div className="grid gap-4 sm:grid-cols-2 mt-4">
+							<div className="p-4 bg-white rounded shadow">
+								<h3 className="font-medium">Status</h3>
+								<pre className="mt-2">{String(status)}</pre>
+							</div>
+							<div className="p-4 bg-white rounded shadow">
+								<h3 className="font-medium">Response Headers</h3>
+								<pre className="mt-2 text-sm">
+									{JSON.stringify(headersObj, null, 2)}
+								</pre>
+							</div>
+							<div className="p-4 bg-white rounded shadow sm:col-span-2">
+								<h3 className="font-medium">Body (parsed)</h3>
+								<pre className="mt-2 text-sm">{JSON.stringify(body, null, 2)}</pre>
+							</div>
+						</div>
+					)}
+				</section>
+
+				<section className="mt-8">
+					<h2 className="text-lg font-semibold">Actions</h2>
+					<div className="mt-4 flex gap-4">
+						{body ? (
+							// when logged in, show role-aware navigation
+							<>
+								<Link
+									href={
+										((body?.role || '') as string).toLowerCase() === 'admin'
+											? '/admin/dashboard'
+											: '/'
+									}
+									className="px-4 py-2 bg-orange-500 text-white rounded"
+								>
+									Go to app
+								</Link>
+								<button
+									onClick={handleLogout}
+									className="px-4 py-2 bg-gray-200 rounded"
+								>
+									Logout (server)
+								</button>
+							</>
+						) : (
+							<Link
+								href="/auth/login"
+								className="px-4 py-2 bg-orange-500 text-white rounded"
+							>
+								Go to login
+							</Link>
+						)}
+					</div>
+				</section>
 			</main>
-			<footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/file.svg" alt="File icon" width={16} height={16} />
-					Learn
-				</a>
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/window.svg" alt="Window icon" width={16} height={16} />
-					Examples
-				</a>
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/globe.svg" alt="Globe icon" width={16} height={16} />
-					Go to nextjs.org →
-				</a>
+
+			<footer className="mt-12 text-sm text-gray-500">
+				Auth inspector — shows raw response from the API.
 			</footer>
 		</div>
 	);

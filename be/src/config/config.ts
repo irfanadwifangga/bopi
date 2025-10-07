@@ -17,6 +17,14 @@ const envVarSchema = Joi.object()
 			.description('CORS allowed origins'),
 		RATE_LIMIT_WINDOW: Joi.number().default(15).description('Rate limit window in minutes'),
 		RATE_LIMIT_MAX: Joi.number().default(100).description('Max requests per window'),
+		JWT_SECRET: Joi.string().required().description('JWT secret for signing tokens'),
+		JWT_EXPIRES_IN: Joi.string().default('7d').description('JWT token TTL'),
+
+		COOKIE_SAMESITE: Joi.string()
+			.valid('lax', 'strict', 'none')
+			.default('lax')
+			.description('Cookie SameSite value'),
+		COOKIE_SECURE: Joi.boolean().default(true).description('Whether to mark cookie as secure'),
 	})
 	.unknown(true);
 
@@ -36,5 +44,11 @@ export = {
 	rateLimit: {
 		windowMs: envVars.RATE_LIMIT_WINDOW * 60 * 1000,
 		max: envVars.RATE_LIMIT_MAX,
+	},
+	jwtSecret: envVars.JWT_SECRET,
+	jwtExpiresIn: envVars.JWT_EXPIRES_IN,
+	cookie: {
+		sameSite: envVars.COOKIE_SAMESITE,
+		secure: envVars.COOKIE_SECURE,
 	},
 };
