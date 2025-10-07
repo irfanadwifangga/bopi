@@ -12,6 +12,11 @@ const envVarSchema = Joi.object()
 			.default('development')
 			.required(),
 		DATABASE_URL: Joi.string().uri().required().description('Neon Postgre DB URL'),
+		CORS_ORIGIN: Joi.string()
+			.default('http://localhost:3000')
+			.description('CORS allowed origins'),
+		RATE_LIMIT_WINDOW: Joi.number().default(15).description('Rate limit window in minutes'),
+		RATE_LIMIT_MAX: Joi.number().default(100).description('Max requests per window'),
 	})
 	.unknown(true);
 
@@ -27,4 +32,9 @@ export = {
 	port: envVars.PORT,
 	env: envVars.NODE_ENV,
 	db: envVars.DATABASE_URL,
+	corsOrigin: envVars.CORS_ORIGIN.split(',').map((origin: string) => origin.trim()),
+	rateLimit: {
+		windowMs: envVars.RATE_LIMIT_WINDOW * 60 * 1000,
+		max: envVars.RATE_LIMIT_MAX,
+	},
 };

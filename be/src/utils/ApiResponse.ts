@@ -1,4 +1,22 @@
-class ApiError extends Error {
+export class ApiResponse {
+	static success<T>(
+		data: T,
+		message = 'Request successful',
+		statusCode = 200,
+		meta: Record<string, any> = {},
+	) {
+		return {
+			success: true,
+			statusCode,
+			message,
+			data,
+			meta,
+			timestamp: new Date().toISOString(),
+		};
+	}
+}
+
+export class ApiError extends Error {
 	statusCode: number;
 	isOperational: boolean;
 
@@ -13,4 +31,3 @@ class ApiError extends Error {
 		}
 	}
 }
-export default ApiError;
